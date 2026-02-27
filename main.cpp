@@ -1,5 +1,10 @@
 #include <cmath>
 #include "tgaimage.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
 
 constexpr TGAColor white   = {255, 255, 255, 255}; // attention, BGRA order
 constexpr TGAColor green   = {  0, 255,   0, 255};
@@ -89,5 +94,80 @@ int main(int argc, char** argv) {
 
 
     framebuffer.write_tga_file("framebuffer.tga");
+
+
+    // Extracting vertex files into a single object //
+    std::ifstream inputFile("diablo3_pose.obj"); // Open file
+    std::string line;
+
+    // Protect ourselves by making an error if the file is not found //
+    if (!inputFile.is_open()) {
+        std::cerr << "This file does not exist. Try Again." << std::endl;
+        return 1; // Immediately stops program
+    }
+
+    // Read lines until the end of file //
+    // Note: that I don't actually want to read until the end only
+    // until we are no longer in the v section
+    // Read line -> If v is not first, skip
+    // No, we don't know how many v or where they are so reading
+    // the whole file is fine -- it's a .txt file for Christ's sake
+    std::vector<float> data;
+    int counter = 0;
+    while (std::getline(inputFile, line)) {
+        if  (line.empty()) {
+            std::cout << "Empty line." << std::endl;
+            continue;
+        }
+
+        // Does the line start with v?
+        // Note: Spaces count as elements in the line array
+        if (line[0] == 'v' && line[1] == ' ') {
+            std::istringstream iss(line);
+            char type;
+            float num1, num2, num3;
+
+            // Extract v and three floats
+            if (iss >> type >> num1 >> num2 >> num3) {
+                // Append Counter
+                data.push_back(static_cast<float>(counter));
+                // Append point coordinates
+                data.push_back(num1);
+                data.push_back(num2);
+                data.push_back(num3);
+
+                // Increase counter
+                // Note: This method is based on the assumption that the order in which
+                // we are reading the vertices is the same order the faces want. You will
+                // have to reconcile that .obj starts counting at 1 and c++ starts counting
+                // at 0!
+
+                counter++;
+            }
+        }
+    }
+    std::ofstream outputFile("debug_output.txt");
+
+    // 2. Always check if the file opened successfully!
+    if (outputFile.is_open()) {
+
+        // 3. Loop through every float in your vector
+        for (float number : data) {
+            // Send the number, then a space, down the conveyor belt
+            outputFile << number << " ";
+        }
+
+        // 4. Close the file when you are done
+        outputFile.close();
+
+        std::cout << "Success! Vector saved to debug_output.txt" << std::endl;
+    } else {
+        std::cout << "Error: Could not open or create the file." << std::endl;
+    }
+
+
+
+
+
     return 0;
 }
