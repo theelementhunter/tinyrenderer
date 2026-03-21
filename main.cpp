@@ -72,38 +72,13 @@ void line_maker_3(int x1, int y1, int x2, int y2, TGAImage &framebuffer, TGAColo
     }
 }
 
-int main(int argc, char** argv) {
-    constexpr int width  = 64;
-    constexpr int height = 64;
-    TGAImage framebuffer(width, height, TGAImage::RGB);
-
-    int ax =  7, ay =  3;
-    int bx = 12, by = 37;
-    int cx = 62, cy = 53;
-
-
-    //
-    line_maker_3(ax, ay, bx, by, framebuffer, blue);
-    line_maker_3(bx, by, cx, cy, framebuffer, green);
-    line_maker_3(cx, cy, ax, ay, framebuffer, yellow);
-    line_maker_3(ax, ay, cx, cy, framebuffer, red);
-
-    framebuffer.set(ax, ay, white);
-    framebuffer.set(bx, by, white);
-    framebuffer.set(cx, cy, white);
-
-
-    framebuffer.write_tga_file("framebuffer.tga");
-
-
+bool extract_vertices_to_txt(const std::string& input_filename, const std::string& output_filename) {
     // Extracting vertex files into a single object //
-    std::ifstream inputFile("diablo3_pose.obj"); // Open file
-    std::string line;
-
+    std::ifstream inputFile(input_filename); // Open file
     // Protect ourselves by making an error if the file is not found //
     if (!inputFile.is_open()) {
         std::cerr << "This file does not exist. Try Again." << std::endl;
-        return 1; // Immediately stops program
+        return false; // Immediately stops program
     }
 
     // Read lines until the end of file //
@@ -112,6 +87,7 @@ int main(int argc, char** argv) {
     // Read line -> If v is not first, skip
     // No, we don't know how many v or where they are so reading
     // the whole file is fine -- it's a .txt file for Christ's sake
+    std::string line;
     std::vector<float> data;
     int counter = 0;
     while (std::getline(inputFile, line)) {
@@ -146,7 +122,7 @@ int main(int argc, char** argv) {
             }
         }
     }
-    std::ofstream outputFile("debug_output.txt");
+    std::ofstream outputFile(output_filename);
 
     // 2. Always check if the file opened successfully!
     if (outputFile.is_open()) {
@@ -161,10 +137,43 @@ int main(int argc, char** argv) {
         outputFile.close();
 
         std::cout << "Success! Vector saved to debug_output.txt" << std::endl;
-    } else {
-        std::cout << "Error: Could not open or create the file." << std::endl;
+
+        return true;
+    }
+}
+
+int main(int argc, char** argv) {
+    constexpr int width  = 64;
+    constexpr int height = 64;
+    TGAImage framebuffer(width, height, TGAImage::RGB);
+
+    int ax =  7, ay =  3;
+    int bx = 12, by = 37;
+    int cx = 62, cy = 53;
+
+
+    //
+    line_maker_3(ax, ay, bx, by, framebuffer, blue);
+    line_maker_3(bx, by, cx, cy, framebuffer, green);
+    line_maker_3(cx, cy, ax, ay, framebuffer, yellow);
+    line_maker_3(ax, ay, cx, cy, framebuffer, red);
+
+    framebuffer.set(ax, ay, white);
+    framebuffer.set(bx, by, white);
+    framebuffer.set(cx, cy, white);
+
+
+    framebuffer.write_tga_file("framebuffer.tga");
+
+    bool extract_success = extract_vertices_to_txt("diablo3_pose.obj", "diablo_v_output");
+    if (!extract_success) {
+        std::cerr << "Failed to extract vertices. Closing Program." <<std::endl;
+        return 1;
     }
 
+    // Drawing Vertices using the .obj and the vertex output
+    // Loop through the faces, extract the three indices
+    // Draw Lines
 
 
 
